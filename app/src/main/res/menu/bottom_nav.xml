@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+            android:id="@+id/fragmentScan"
+            android:icon="@drawable/ic_add_a_photo_black"
+            android:title="@string/scan"/>
+    <item
+            android:id="@+id/fragmentPreviousScan"
+            android:icon="@drawable/ic_history_black_24dp"
+            android:title="@string/previous_scan"/>
+
+</menu>
