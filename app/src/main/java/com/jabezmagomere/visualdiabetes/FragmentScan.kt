@@ -2,13 +2,11 @@ package com.jabezmagomere.visualdiabetes
 
 
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.net.Uri
 import android.os.Bundle
-import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -16,36 +14,19 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import com.jabezmagomere.visualdiabetes.ModelConfig.Companion.INPUT_IMG_SIZE_HEIGHT
-import com.jabezmagomere.visualdiabetes.ModelConfig.Companion.intValues
 import kotlinx.android.synthetic.main.fragment_scan.*
-import org.tensorflow.lite.Interpreter
-import java.io.FileInputStream
 import java.lang.Exception
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.MappedByteBuffer
-import java.nio.channels.FileChannel
 
-
-
-
-
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
 /**
  * A simple [Fragment] subclass.
  *
  */
 class FragmentScan : Fragment() {
+    private lateinit var classifier: Classifier
     companion object {
         const val PICK_PHOTO_FOR_SCAN=0
     }
-    private lateinit var tflite : Interpreter
-    private val imgData : ByteBuffer? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -57,25 +38,10 @@ class FragmentScan : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        try{
-            tflite = Interpreter(loadModelFile(context))
-        }catch (ex:Exception){
-
-        }
+        classifier  = Classifier(context!!)
         buttonSelect.setOnClickListener {
             pickImage()
         }
-
-    }
-
-    @Throws(Exception::class)
-    private fun loadModelFile(context: Context?): MappedByteBuffer {
-        val fileDescriptor = context?.assets?.openFd(ModelConfig.MODEL_FILENAME)
-        val inputStream = FileInputStream(fileDescriptor?.fileDescriptor)
-        val fileChannel = inputStream.channel
-        val startOffset = fileDescriptor!!.startOffset
-        val declaredLength = fileDescriptor!!.declaredLength
-        return fileChannel.map(FileChannel.MapMode.READ_ONLY,startOffset,declaredLength)
 
     }
 
@@ -96,11 +62,40 @@ class FragmentScan : Fragment() {
                 val uri = data?.data
                 if(uri!=null) {
                     val imageBitmap = uriToBitmap(uri)
+                    Log.d("Image Bitmap",imageBitmap.toString())
                     imageView3.setImageBitmap(imageBitmap)
                     buttonClassify.apply {
                         isEnabled = true
                         setOnClickListener {
-                            classify(imageBitmap)
+                            val results = classifier.recognizeImage(getResizedBitmap(imageBitmap,ModelConfig.INPUT_IMG_SIZE_WIDTH,ModelConfig.INPUT_IMG_SIZE_HEIGHT))
+                            cardView.visibility = View.VISIBLE
+                            var count = 0
+                            results.forEach { array->
+                                array.forEach {
+                                    when(count){
+                                        0->{
+                                            textView4.text = it.toString()
+                                        }
+                                        1->{
+                                            textView6.text = it.toString()
+                                        }
+                                        2->{
+                                            textView8.text = it.toString()
+                                        }
+                                        3->{
+                                            textView10.text = it.toString()
+                                        }
+                                        4->{
+                                            textView12.text = it.toString()
+                                        }
+                                        else->{
+
+                                        }
+                                    }
+                                    count++
+
+                                }
+                            }
                         }
                     }
                 }
@@ -113,13 +108,7 @@ class FragmentScan : Fragment() {
 
     private fun uriToBitmap(uri: Uri): Bitmap {
         return MediaStore.Images.Media.getBitmap(this.context?.contentResolver, uri)
-    }
 
-    private fun classify(bitmap: Bitmap){
-        val buffer = ModelConfig.convertBitmapToByteBuffer(bitmap)
-        val result = arrayOf<Array<Float>>()
-        tflite.run(buffer,result)
-        Log.d("Classifications",result.toString())
     }
 
     fun getResizedBitmap(bm: Bitmap, newWidth: Int, newHeight: Int): Bitmap {
@@ -139,5 +128,6 @@ class FragmentScan : Fragment() {
         bm.recycle()
         return resizedBitmap
     }
+
 
 }

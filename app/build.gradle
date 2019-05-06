@@ -65,4 +65,7 @@ dependencies {
     implementation 'org.tensorflow:tensorflow-lite:0.0.0-nightly'
 
     implementation 'androidx.core:core-ktx:1.0.1'
+
+    implementation 'com.github.ankitdubey021:MySnack:2.3'
+
 }
